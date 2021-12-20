@@ -68,7 +68,6 @@ class _ConfigurationButtonListState extends State<ConfigurationButtonList> {
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     final double itemHeight = (size.height - kToolbarHeight - 24) / 2;
-    final double itemWidth = size.width / 2;
     return Scaffold(
       appBar: AppBar(
         title: const Text("Link Motion Tool"),

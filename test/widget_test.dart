@@ -16,6 +16,7 @@ void main() {
     await tester.pumpWidget(const LinkMotionToolApp(
       softwarePath: '',
       softwareConfigPath: '',
+      configFileListCount: 0,
     ));
 
     // Verify that our counter starts at 0.

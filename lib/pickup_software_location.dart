@@ -316,24 +316,27 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
             softwarePathPickupWidget(),
             softwareConfigPathPickupWidget(),
             configFileList(context),
-            BouncingButton(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: const [
-                  Icon(
-                    Icons.save,
-                    size: 20,
-                    color: Colors.white,
-                  ),
-                  SizedBox(
-                    width: 10,
-                  ),
-                  Text("Save Config",
-                      style: TextStyle(color: Colors.white, fontSize: 20))
-                ],
+            SizedBox(
+              width: 200,
+              child: BouncingButton(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(
+                      Icons.save,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text("Save Config",
+                        style: TextStyle(color: Colors.white, fontSize: 20))
+                  ],
+                ),
+                onPressed: validatePaths,
               ),
-              onPressed: validatePaths,
             ),
           ],
         ),
