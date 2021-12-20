@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 class CustomTextFormField extends StatefulWidget {
   final String path;
-  const CustomTextFormField({Key? key, required this.path}) : super(key: key);
+  final String name;
+  const CustomTextFormField({Key? key, required this.path, required this.name})
+      : super(key: key);
 
   @override
   _CustomTextFormFieldState createState() => _CustomTextFormFieldState();
@@ -16,7 +18,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
   void initState() {
     _textEditingController = TextEditingController();
     _textEditingController.text = widget.path;
-    folderPath = widget.path.split('\\')[widget.path.split('\\').length - 2];
+    folderPath = widget.name;
     super.initState();
   }
 

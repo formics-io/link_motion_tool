@@ -1,3 +1,4 @@
+import 'package:link_motion_tool/config_file_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PreferenceService {
@@ -8,6 +9,7 @@ class PreferenceService {
 
   static Future<void> initializePrefrence() async {
     _preferences = await SharedPreferences.getInstance();
+    // _preferences.clear();
   }
 
   static Future<String> getSoftwarePath() async {
@@ -30,21 +32,25 @@ class PreferenceService {
     _preferences.setString(softwareConfigPathKey, path);
   }
 
-  static Future<void> addConfigurationFilePath(String path) async {
+  static Future<void> addConfigurationFilePath(
+      ConfigFileModel configFileModel) async {
     await initializePrefrence();
-    List<String> pathList = await getConfigurationFilePath();
-    pathList.add(path);
+    List<ConfigFileModel> configPathList = await getConfigurationFilePath();
+    configPathList.add(configFileModel);
 
-    _preferences.setStringList(configFilePathKey, pathList);
+    _preferences.setString(
+        configFilePathKey, configFileModelToJson(configPathList));
   }
 
   static Future<void> deleteConfigurationFilePath(int index) async {
-    List<String> pathList = await getConfigurationFilePath();
-    pathList.removeAt(index);
-    _preferences.setStringList(configFilePathKey, pathList);
+    List<ConfigFileModel> configPathList = await getConfigurationFilePath();
+    configPathList.removeAt(index);
+    _preferences.setString(
+        configFilePathKey, configFileModelToJson(configPathList));
   }
 
-  static Future<List<String>> getConfigurationFilePath() async {
-    return _preferences.getStringList(configFilePathKey) ?? [];
+  static Future<List<ConfigFileModel>> getConfigurationFilePath() async {
+    String jsonData = _preferences.getString(configFilePathKey) ?? '';
+    return jsonData.isNotEmpty ? configFileModelFromJson(jsonData) : [];
   }
 }

@@ -1,15 +1,13 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:link_motion_tool/bouncing_button.dart';
+import 'package:link_motion_tool/config_file_model.dart';
+import 'package:link_motion_tool/configuration_button_list.dart';
 import 'package:link_motion_tool/form_field_widget.dart';
 import 'package:link_motion_tool/preference_service.dart';
-import 'dart:io' as io;
 
 class PickupSoftwareLocation extends StatefulWidget {
-  final String softwarePath;
-  final String softwareConfigPath;
-  const PickupSoftwareLocation(
-      {Key? key, required this.softwarePath, required this.softwareConfigPath})
-      : super(key: key);
+  const PickupSoftwareLocation({Key? key}) : super(key: key);
 
   @override
   _PickupSoftwareLocationState createState() => _PickupSoftwareLocationState();
@@ -18,6 +16,7 @@ class PickupSoftwareLocation extends StatefulWidget {
 class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
   late TextEditingController _softwarePathController;
   late TextEditingController _softwareConfigPathController;
+  late TextEditingController _customConfigPathController;
   late bool disableSoftwarePicker;
   late bool disableSoftwareConfigPicker;
   late List<CustomTextFormField> textFormFieldList;
@@ -27,9 +26,8 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
   @override
   void initState() {
     _softwarePathController = TextEditingController();
-    _softwarePathController.text = widget.softwarePath;
     _softwareConfigPathController = TextEditingController();
-    _softwareConfigPathController.text = widget.softwareConfigPath;
+    _customConfigPathController = TextEditingController();
     textFormFieldList = List<CustomTextFormField>.empty(growable: true);
     disableSoftwarePicker = false;
     disableSoftwareConfigPicker = false;
@@ -42,22 +40,19 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
   validatePaths() async {
     String softwarePath = await PreferenceService.getSoftwarePath();
     String softwareConfigPath = await PreferenceService.getSoftwareConfigPath();
-    String replacementConfigFile =
-        textFormFieldList.isNotEmpty && selectedConfigIndex > -1
-            ? textFormFieldList[selectedConfigIndex].path
-            : '';
+    int replacementConfigFile =
+        (await PreferenceService.getConfigurationFilePath()).length;
     if (softwarePath.isNotEmpty) {
       if (softwareConfigPath.isNotEmpty) {
-        if (replacementConfigFile.isNotEmpty) {
-          String softwareFolderPath =
-              (softwarePath.split('\\')..removeLast()).join('\\').toString();
-          executeConfigCommand(
-              softwareFolderPath,
-              softwarePath.split('\\').removeLast(),
-              replacementConfigFile,
-              softwareConfigPath);
+        if (replacementConfigFile > 0) {
+          Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                  builder: (BuildContext ctx) =>
+                      const ConfigurationButtonList()),
+              (route) => false);
         } else {
-          showSnackBar("Select configuration file to replace");
+          showSnackBar("Add configuration file to replace");
         }
       } else {
         showSnackBar("Select software config path first");
@@ -65,18 +60,6 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
     } else {
       showSnackBar("Select software path first");
     }
-  }
-
-  executeConfigCommand(String softwareFolderPath, String softwareFilePath,
-      String sourceConfigFilePath, String destinationConfigFilePath) async {
-    await io.Process.run("Taskkill", ["/IM", softwareFilePath, "/F"],
-        runInShell: true);
-    await io.Process.run(
-        "copy", [sourceConfigFilePath, destinationConfigFilePath],
-        runInShell: true);
-    io.Process.run("start", [softwareFilePath],
-        runInShell: true, workingDirectory: softwareFolderPath);
-    showSnackBar("Application launched");
   }
 
   showSnackBar(String message) {
@@ -87,12 +70,17 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
   }
 
   Future<void> getFormFields() async {
+    String softwarePath = await PreferenceService.getSoftwarePath();
+    String softwareConfigPath = await PreferenceService.getSoftwareConfigPath();
+    _softwarePathController.text = softwarePath;
+    _softwareConfigPathController.text = softwareConfigPath;
     List<CustomTextFormField> textFieldList =
         (await PreferenceService.getConfigurationFilePath())
             .asMap()
             .entries
             .map((e) => CustomTextFormField(
-                  path: e.value,
+                  path: e.value.path,
+                  name: e.value.name,
                 ))
             .toList();
     if (textFieldList.isNotEmpty) {
@@ -100,12 +88,6 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
         textFormFieldList.addAll(textFieldList);
       });
     }
-  }
-
-  void onConfigChange(int index) {
-    setState(() {
-      selectedConfigIndex = index;
-    });
   }
 
   Container configFileList(BuildContext context) {
@@ -134,15 +116,6 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          Flexible(
-            flex: 0,
-            child: IconButton(
-                tooltip: "Select configuration",
-                onPressed: () => onConfigChange(index),
-                icon: Icon(selectedConfigIndex == index
-                    ? Icons.radio_button_on_outlined
-                    : Icons.radio_button_off_outlined)),
-          ),
           Flexible(flex: 1, child: textFormFieldList[index]),
           Flexible(
               flex: 0,
@@ -265,13 +238,17 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
         allowedExtensions: ["ini"]);
     if (result != null && result.files.single.path!.isNotEmpty) {
       if (isCustomConfig) {
-        setState(() {
-          PreferenceService.addConfigurationFilePath(
-              result.files.single.path ?? '');
-          textFormFieldList.add(CustomTextFormField(
-            path: result.files.single.path ?? '',
-          ));
-        });
+        String configName = await nameDialog();
+        if (configName.isNotEmpty) {
+          setState(() {
+            PreferenceService.addConfigurationFilePath(ConfigFileModel(
+                path: result.files.single.path ?? '', name: configName));
+            textFormFieldList.add(CustomTextFormField(
+              path: result.files.single.path ?? '',
+              name: configName,
+            ));
+          });
+        }
       } else {
         _softwareConfigPathController.text = result.files.single.path ?? '';
         disableSoftwareConfigPicker = true;
@@ -283,16 +260,48 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
     }
   }
 
+  nameDialog() async {
+    return await showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (ctx) {
+          return AlertDialog(
+            content: TextFormField(
+              controller: _customConfigPathController,
+              decoration: const InputDecoration(
+                label: Text("Configuration name"),
+                contentPadding: EdgeInsets.all(20),
+                hintText: "Enter configuration name",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop('');
+                  },
+                  child: const Text("Cancel")),
+              ElevatedButton(
+                  onPressed: () {
+                    if (_customConfigPathController.text.isNotEmpty) {
+                      Navigator.of(context)
+                          .pop(_customConfigPathController.text);
+                      _customConfigPathController.clear();
+                    } else {
+                      showSnackBar("Please enter file name.");
+                    }
+                  },
+                  child: const Text("Save"))
+            ],
+          );
+        });
+  }
+
   removeConfigurationPath(int index) {
     setState(() {
       textFormFieldList.removeAt(index);
     });
     PreferenceService.deleteConfigurationFilePath(index);
-    if (textFormFieldList.isEmpty || selectedConfigIndex == index) {
-      setState(() {
-        selectedConfigIndex = -1;
-      });
-    }
   }
 
   @override
@@ -307,13 +316,22 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
             softwarePathPickupWidget(),
             softwareConfigPathPickupWidget(),
             configFileList(context),
-            OutlinedButton(
-              style: ButtonStyle(
-                  padding: MaterialStateProperty.all(const EdgeInsets.all(40)),
-                  backgroundColor: MaterialStateProperty.all(Colors.blue)),
-              child: const Text(
-                "Run App",
-                style: TextStyle(color: Colors.white, fontSize: 20),
+            BouncingButton(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: const [
+                  Icon(
+                    Icons.save,
+                    size: 20,
+                    color: Colors.white,
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Text("Save Config",
+                      style: TextStyle(color: Colors.white, fontSize: 20))
+                ],
               ),
               onPressed: validatePaths,
             ),
