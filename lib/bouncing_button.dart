@@ -4,7 +4,7 @@ class BouncingButton extends StatefulWidget {
   final Widget child;
   final Function onPressed;
 
-  const BouncingButton({Key? key, required this.child, required this.onPressed})
+  const BouncingButton({Key? key, required this.child, required this.onPressed,})
       : super(key: key);
 
   @override
@@ -61,11 +61,13 @@ class _BouncingButtonState extends State<BouncingButton>
       child: Transform.scale(
         scale: scale,
         child: Container(
+          width: 100,
+          height: 80,
           alignment: Alignment.center,
-          padding: const EdgeInsets.all(20),
+          //padding: const EdgeInsets.all(0),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5.0),
-            color: buttonColor,
+            color:buttonColor,
             boxShadow: const [
               BoxShadow(
                 color: Colors.grey,
@@ -74,7 +76,12 @@ class _BouncingButtonState extends State<BouncingButton>
               ),
             ],
           ),
-          child: widget.child,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              widget.child, // Original button text or widget
+            ],
+          ),
         ),
       ),
     );

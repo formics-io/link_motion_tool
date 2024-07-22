@@ -29,6 +29,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  win32: ^2.6.1
   file_picker: ^4.2.7
   shared_preferences: ^2.0.11
 
