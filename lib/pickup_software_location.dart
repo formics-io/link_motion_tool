@@ -17,8 +17,13 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
   late TextEditingController _softwarePathController;
   late TextEditingController _softwareConfigPathController;
   late TextEditingController _customConfigPathController;
+  late TextEditingController _widthController;
+  late TextEditingController __hightController;
+  late TextEditingController _imagePathController;
+  late TextEditingController _colorController;
   late bool disableSoftwarePicker;
   late bool disableSoftwareConfigPicker;
+  late bool disableImagePicker;
   late List<CustomTextFormField> textFormFieldList;
   late int selectedConfigIndex;
   late ScrollController _scrollController;
@@ -28,9 +33,14 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
     _softwarePathController = TextEditingController();
     _softwareConfigPathController = TextEditingController();
     _customConfigPathController = TextEditingController();
+    _widthController = TextEditingController();
+    __hightController = TextEditingController();
+    _imagePathController = TextEditingController();
+    _colorController = TextEditingController();
     textFormFieldList = List<CustomTextFormField>.empty(growable: true);
     disableSoftwarePicker = false;
     disableSoftwareConfigPicker = false;
+    disableImagePicker = false;
     selectedConfigIndex = -1;
     _scrollController = ScrollController();
     getFormFields();
@@ -81,6 +91,10 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
             .map((e) => CustomTextFormField(
                   path: e.value.path,
                   name: e.value.name,
+                  imagePath: e.value.imagePath,
+                  height: e.value.height,
+                  width: e.value.width,
+                  color: e.value.color,
                 ))
             .toList();
     if (textFieldList.isNotEmpty) {
@@ -125,7 +139,9 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
                   icon: const Icon(
                     Icons.delete,
                     color: Colors.red,
-                  )))
+                  ),
+                ),
+              ),
         ],
       ),
     );
@@ -215,6 +231,48 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
     );
   }
 
+  Container imagePathPickupWidget() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            flex: 1,
+            child: TextFormField(
+              readOnly: true,
+              onTap: () => pickupImageFile(),
+              controller: _imagePathController,
+              enabled: !disableSoftwareConfigPicker,
+              decoration: const InputDecoration(
+                label: Text("Select image path"),
+                contentPadding: EdgeInsets.all(20),
+                suffixIcon: Icon(Icons.app_settings_alt_outlined),
+                hintText: "Select image path",
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          const SizedBox(
+            width: 20,
+          ),
+          TextButton(
+              onPressed: () {
+                setState(() {
+                  disableImagePicker = false;
+                  pickupImageFile();
+                });
+              },
+              child: const Text(
+                "Change",
+                style: TextStyle(decoration: TextDecoration.underline),
+              ))
+        ],
+      ),
+    );
+  }
+
   pickupSoftwareFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: false,
@@ -242,11 +300,19 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
         if (configName.isNotEmpty) {
           setState(() {
             PreferenceService.addConfigurationFilePath(ConfigFileModel(
-                path: result.files.single.path ?? '', name: configName));
+                path: result.files.single.path ?? '', name: configName), _imagePathController.text, __hightController.text, _widthController.text, _colorController.text);
             textFormFieldList.add(CustomTextFormField(
               path: result.files.single.path ?? '',
               name: configName,
+              imagePath: _imagePathController.text,
+              height: __hightController.text,
+              width: _widthController.text,
+              color: _colorController.text,
             ));
+             _imagePathController.clear();
+             __hightController.clear();
+             _widthController.clear();
+             _colorController.clear();
           });
         }
       } else {
@@ -260,41 +326,109 @@ class _PickupSoftwareLocationState extends State<PickupSoftwareLocation> {
     }
   }
 
+  pickupImageFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+        allowMultiple: false,
+        type: FileType.custom,
+        allowedExtensions: ["jpg"]);
+    if (result != null) {
+      setState(() {
+        _imagePathController.text = result.files.single.path ?? '';
+        disableImagePicker = true;
+        
+      });
+    } else {
+      debugPrint("No file selected");
+    }
+  }
+
   nameDialog() async {
     return await showDialog(
-        barrierDismissible: false,
-        context: context,
-        builder: (ctx) {
-          return AlertDialog(
-            content: TextFormField(
-              controller: _customConfigPathController,
-              decoration: const InputDecoration(
-                label: Text("Configuration name"),
-                contentPadding: EdgeInsets.all(20),
-                hintText: "Enter configuration name",
-                border: OutlineInputBorder(),
+      barrierDismissible: false,
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _customConfigPathController,
+                decoration: const InputDecoration(
+                  label: Text("Configuration name"),
+                  contentPadding: EdgeInsets.all(20),
+                  hintText: "Enter configuration name",
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop('');
-                  },
-                  child: const Text("Cancel")),
-              ElevatedButton(
-                  onPressed: () {
-                    if (_customConfigPathController.text.isNotEmpty) {
-                      Navigator.of(context)
-                          .pop(_customConfigPathController.text);
-                      _customConfigPathController.clear();
-                    } else {
-                      showSnackBar("Please enter file name.");
-                    }
-                  },
-                  child: const Text("Save"))
+              const SizedBox(height: 20), // Spacer between fields
+              TextFormField(
+                controller: _widthController,
+                decoration: const InputDecoration(
+                  label: Text("Width"),
+                  contentPadding: EdgeInsets.all(20),
+                  hintText: "Enter width",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20), // Spacer between fields
+              TextFormField(
+                controller: __hightController,
+                decoration: const InputDecoration(
+                  label: Text("Hight"),
+                  contentPadding: EdgeInsets.all(20),
+                  hintText: "Enter hight",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20), // Spacer between fields
+              TextFormField(
+                controller: _colorController,
+                decoration: const InputDecoration(
+                  label: Text("Button Color"),
+                  contentPadding: EdgeInsets.all(20),
+                  hintText: "Enter button color",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20), // Spacer between fields
+              TextFormField(
+                readOnly: true,
+                onTap: () => pickupImageFile(),
+                controller: _imagePathController,
+                enabled: !disableSoftwareConfigPicker,
+                decoration: const InputDecoration(
+                  label: Text("Select image path"),
+                  contentPadding: EdgeInsets.all(20),
+                  suffixIcon: Icon(Icons.app_settings_alt_outlined),
+                  hintText: "Select image path",
+                  border: OutlineInputBorder(),
+                ),
+              ),
             ],
-          );
-        });
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop('');
+              },
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (_customConfigPathController.text.isNotEmpty) {
+                  Navigator.of(context)
+                    .pop(_customConfigPathController.text);
+                    _customConfigPathController.clear();
+                } else {
+                  showSnackBar("Please enter file name.");
+                }
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   removeConfigurationPath(int index) {
