@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 class CustomTextFormField extends StatefulWidget {
   final String path;
   final String name;
-  const CustomTextFormField({Key? key, required this.path, required this.name})
+  final String? imagePath;
+  final String? height;
+  final String? width;
+  final String? color;
+
+  const CustomTextFormField({Key? key, required this.path, required this.name, this.imagePath, this.height, this.width, this.color})
       : super(key: key);
 
   @override
