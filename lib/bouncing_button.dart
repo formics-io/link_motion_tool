@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 class BouncingButton extends StatefulWidget {
   final Widget child;
   final Function onPressed;
+  final Color color;
 
-  const BouncingButton({Key? key, required this.child, required this.onPressed})
+  const BouncingButton({Key? key, required this.child, required this.onPressed, this.color = Colors.green})
       : super(key: key);
 
   @override
@@ -27,7 +28,8 @@ class _BouncingButtonState extends State<BouncingButton>
       ..addListener(() {
         setState(() {});
       });
-    buttonColor = Colors.green;
+    //buttonColor = Colors.green;
+    buttonColor = widget.color;
     super.initState();
   }
 
@@ -40,14 +42,16 @@ class _BouncingButtonState extends State<BouncingButton>
   void _tapDown(TapDownDetails details) {
     _controller.forward();
     setState(() {
-      buttonColor = Colors.lightGreen[300] as Color;
+      //buttonColor = Colors.lightGreen[300] as Color;
+      buttonColor = widget.color;
     });
   }
 
   void _tapUp(TapUpDetails details) {
     _controller.reverse();
     setState(() {
-      buttonColor = Colors.green;
+      //buttonColor = Colors.green;
+      buttonColor = widget.color;
     });
     widget.onPressed();
   }
@@ -61,8 +65,10 @@ class _BouncingButtonState extends State<BouncingButton>
       child: Transform.scale(
         scale: scale,
         child: Container(
+          width: 150,
+          height: 80,
           alignment: Alignment.center,
-          padding: const EdgeInsets.all(20),
+          //padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5.0),
             color: buttonColor,
